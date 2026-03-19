@@ -3,6 +3,8 @@ import { auth } from '@/lib/auth/config';
 import { db } from '@/lib/db/client';
 import { knowledgeFiles } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+
+export const dynamic = 'force-dynamic';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function GET() {

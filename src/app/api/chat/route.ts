@@ -1,5 +1,7 @@
 import { NextRequest } from 'next/server';
 import { auth } from '@/lib/auth/config';
+
+export const dynamic = 'force-dynamic';
 import { getAnthropicClient } from '@/lib/ai/client';
 import { buildSystemPrompt } from '@/lib/ai/system-prompt';
 import { getContextForMessage } from '@/lib/knowledge/retriever';

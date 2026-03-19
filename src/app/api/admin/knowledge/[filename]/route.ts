@@ -4,6 +4,8 @@ import { db } from '@/lib/db/client';
 import { knowledgeFiles } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
     _req: NextRequest,
     {
