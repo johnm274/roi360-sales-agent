@@ -39,11 +39,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Get partner profile
-    const partner = db
+    const partnerRows = await db
         .select()
         .from(partners)
-        .where(eq(partners.id, session.user.id))
-        .get();
+        .where(eq(partners.id, session.user.id));
+
+    const partner = partnerRows[0];
 
     if (!partner) {
         return new Response('Partner not found', {
@@ -55,39 +56,34 @@ export async function POST(req: NextRequest) {
     let convId = conversationId;
     if (!convId) {
         convId = uuidv4();
-        db.insert(conversations)
-            .values({
-                id: convId,
-                partnerId: partner.id,
-                title: message.slice(0, 100),
-                outputMode,
-            })
-            .run();
+        await db.insert(conversations).values({
+            id: convId,
+            partnerId: partner.id,
+            title: message.slice(0, 100),
+            outputMode,
+        });
     }
 
     // Save user message
-    db.insert(messages)
-        .values({
-            id: uuidv4(),
-            conversationId: convId,
-            role: 'user',
-            content: message,
-        })
-        .run();
+    await db.insert(messages).values({
+        id: uuidv4(),
+        conversationId: convId,
+        role: 'user',
+        content: message,
+    });
 
     // Load conversation history
-    const history = db
+    const allHistory = await db
         .select()
         .from(messages)
         .where(
             eq(messages.conversationId, convId),
-        )
-        .all()
-        .slice(-20); // Last 20 messages
+        );
+    const history = allHistory.slice(-20);
 
     // Build context
     const contextKnowledge =
-        getContextForMessage(message);
+        await getContextForMessage(message);
     const sectors = partner.sectors
         ? JSON.parse(partner.sectors)
         : null;
@@ -150,14 +146,14 @@ export async function POST(req: NextRequest) {
                 }
 
                 // Save assistant response
-                db.insert(messages)
+                await db
+                    .insert(messages)
                     .values({
                         id: uuidv4(),
                         conversationId: convId!,
                         role: 'assistant',
                         content: fullResponse,
-                    })
-                    .run();
+                    });
 
                 // Send done event with conversation ID
                 const doneData = JSON.stringify({

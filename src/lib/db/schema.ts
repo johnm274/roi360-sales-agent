@@ -68,11 +68,15 @@ export const partnerContext = sqliteTable('partner_context', {
 
 export const knowledgeFiles = sqliteTable('knowledge_files', {
     id: text('id').primaryKey(),
-    filename: text('filename').notNull(),
+    filename: text('filename').notNull().unique(),
     category: text('category').notNull(),
+    content: text('content').notNull().default(''),
     contentHash: text('content_hash'),
     lastIndexedAt: text('last_indexed_at'),
     createdAt: text('created_at')
+        .notNull()
+        .$defaultFn(() => new Date().toISOString()),
+    updatedAt: text('updated_at')
         .notNull()
         .$defaultFn(() => new Date().toISOString()),
 });

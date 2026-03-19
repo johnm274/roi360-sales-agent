@@ -1,16 +1,10 @@
-import fs from 'fs';
-import path from 'path';
+import { db } from '@/lib/db/client';
+import { knowledgeFiles } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
 import {
     KNOWLEDGE_CATEGORIES,
     type KnowledgeCategory,
 } from './constants';
-
-function getKnowledgeDir(): string {
-    return (
-        process.env.KNOWLEDGE_SOURCE_DIR ||
-        path.join(process.cwd(), 'knowledge', 'source')
-    );
-}
 
 export function selectCategories(
     userMessage: string,
@@ -50,61 +44,64 @@ export function selectCategories(
     return sorted;
 }
 
-export function loadCategoryContent(
+export async function loadCategoryContent(
     category: KnowledgeCategory,
-): string | null {
+): Promise<string | null> {
     const config = KNOWLEDGE_CATEGORIES[category];
     if (!config) return null;
 
-    const filePath = path.join(
-        getKnowledgeDir(),
-        config.file,
-    );
-
     try {
-        return fs.readFileSync(filePath, 'utf-8');
+        const rows = await db
+            .select({
+                content: knowledgeFiles.content,
+            })
+            .from(knowledgeFiles)
+            .where(
+                eq(
+                    knowledgeFiles.filename,
+                    config.file,
+                ),
+            );
+
+        return rows[0]?.content || null;
     } catch {
         return null;
     }
 }
 
-export function loadAllKnowledge(): string {
-    const dir = getKnowledgeDir();
-    const files = fs.readdirSync(dir).filter(
-        (f) => f.endsWith('.md'),
-    );
+export async function loadAllKnowledge(): Promise<string> {
+    try {
+        const rows = await db
+            .select({
+                content: knowledgeFiles.content,
+            })
+            .from(knowledgeFiles);
 
-    return files
-        .map((f) => {
-            try {
-                return fs.readFileSync(
-                    path.join(dir, f),
-                    'utf-8',
-                );
-            } catch {
-                return '';
-            }
-        })
-        .filter(Boolean)
-        .join('\n\n---\n\n');
+        return rows
+            .map((r) => r.content)
+            .filter(Boolean)
+            .join('\n\n---\n\n');
+    } catch {
+        return '';
+    }
 }
 
-export function getContextForMessage(
+export async function getContextForMessage(
     userMessage: string,
-): string {
+): Promise<string> {
     const categories =
         selectCategories(userMessage);
 
-    const contents = categories
-        .map((cat) => {
+    const contents = await Promise.all(
+        categories.map(async (cat) => {
             const content =
-                loadCategoryContent(cat);
+                await loadCategoryContent(cat);
             if (!content) return '';
             const label =
                 KNOWLEDGE_CATEGORIES[cat].label;
             return `## ${label}\n\n${content}`;
-        })
-        .filter(Boolean);
+        }),
+    );
 
-    return contents.join('\n\n---\n\n');
+    return contents.filter(Boolean).join('\n\n---\n\n');
 }

@@ -8,6 +8,13 @@
       "when": 1773766509500,
       "tag": "0000_lovely_spiral",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1773919810024,
+      "tag": "0001_furry_hellfire_club",
+      "breakpoints": true
     }
   ]
 }

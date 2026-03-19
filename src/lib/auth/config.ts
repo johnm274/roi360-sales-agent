@@ -5,7 +5,12 @@ import { db } from '@/lib/db/client';
 import { partners } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
+export const {
+    handlers,
+    signIn,
+    signOut,
+    auth,
+} = NextAuth({
     providers: [
         Credentials({
             name: 'Email & Password',
@@ -27,15 +32,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     return null;
                 }
 
-                const email = credentials.email as string;
+                const email =
+                    credentials.email as string;
                 const password =
                     credentials.password as string;
 
-                const partner = db
+                const rows = await db
                     .select()
                     .from(partners)
-                    .where(eq(partners.email, email))
-                    .get();
+                    .where(
+                        eq(partners.email, email),
+                    );
+
+                const partner = rows[0];
 
                 if (!partner) {
                     return null;
@@ -55,7 +64,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     name: partner.name,
                     email: partner.email,
                     isAdmin: partner.isAdmin,
-                    companyName: partner.companyName,
+                    companyName:
+                        partner.companyName,
                 };
             },
         }),
@@ -65,17 +75,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             if (user) {
                 token.id = user.id;
                 token.isAdmin = (
-                    user as { isAdmin?: boolean }
+                    user as {
+                        isAdmin?: boolean;
+                    }
                 ).isAdmin;
                 token.companyName = (
-                    user as { companyName?: string }
+                    user as {
+                        companyName?: string;
+                    }
                 ).companyName;
             }
             return token;
         },
         async session({ session, token }) {
             if (session.user) {
-                session.user.id = token.id as string;
+                session.user.id =
+                    token.id as string;
                 session.user.isAdmin =
                     token.isAdmin as boolean;
                 session.user.companyName =

@@ -1,22 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth/config';
-import fs from 'fs';
-import path from 'path';
-
-function getKnowledgeDir(): string {
-    return (
-        process.env.KNOWLEDGE_SOURCE_DIR ||
-        path.join(
-            process.cwd(),
-            'knowledge',
-            'source',
-        )
-    );
-}
+import { db } from '@/lib/db/client';
+import { knowledgeFiles } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
 
 export async function GET(
     _req: NextRequest,
-    { params }: { params: Promise<{ filename: string }> },
+    {
+        params,
+    }: { params: Promise<{ filename: string }> },
 ) {
     const session = await auth();
     if (!session?.user?.isAdmin) {
@@ -27,17 +19,28 @@ export async function GET(
     }
 
     const { filename } = await params;
-    const dir = getKnowledgeDir();
-    const filePath = path.join(dir, filename);
 
     try {
-        const content = fs.readFileSync(
-            filePath,
-            'utf-8',
-        );
+        const rows = await db
+            .select()
+            .from(knowledgeFiles)
+            .where(
+                eq(
+                    knowledgeFiles.filename,
+                    filename,
+                ),
+            );
+
+        if (rows.length === 0) {
+            return NextResponse.json(
+                { error: 'File not found' },
+                { status: 404 },
+            );
+        }
+
         return NextResponse.json({
-            filename,
-            content,
+            filename: rows[0].filename,
+            content: rows[0].content,
         });
     } catch {
         return NextResponse.json(
@@ -49,7 +52,9 @@ export async function GET(
 
 export async function PUT(
     req: NextRequest,
-    { params }: { params: Promise<{ filename: string }> },
+    {
+        params,
+    }: { params: Promise<{ filename: string }> },
 ) {
     const session = await auth();
     if (!session?.user?.isAdmin) {
@@ -62,15 +67,21 @@ export async function PUT(
     const { filename } = await params;
     const { content } = await req.json();
 
-    const dir = getKnowledgeDir();
-    const filePath = path.join(dir, filename);
-
     try {
-        fs.writeFileSync(
-            filePath,
-            content,
-            'utf-8',
-        );
+        await db
+            .update(knowledgeFiles)
+            .set({
+                content,
+                updatedAt:
+                    new Date().toISOString(),
+            })
+            .where(
+                eq(
+                    knowledgeFiles.filename,
+                    filename,
+                ),
+            );
+
         return NextResponse.json({
             success: true,
         });
