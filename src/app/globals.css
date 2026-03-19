@@ -1,26 +1,32 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+    --roi-red: #c8102e;
+    --roi-red-dark: #a50d24;
+    --roi-red-light: #e8304a;
+    --roi-dark: #1a1a2e;
+    --roi-grey: #4a4a5a;
+    --roi-light-grey: #f5f5f7;
+    --roi-white: #ffffff;
+
+    --background: var(--roi-white);
+    --foreground: var(--roi-dark);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-roi-red: var(--roi-red);
+    --color-roi-red-dark: var(--roi-red-dark);
+    --color-roi-red-light: var(--roi-red-light);
+    --color-roi-dark: var(--roi-dark);
+    --color-roi-grey: var(--roi-grey);
+    --color-roi-light-grey: var(--roi-light-grey);
+    --font-sans: 'Ubuntu', Arial, Helvetica, sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: 'Ubuntu', Arial, Helvetica, sans-serif;
 }
